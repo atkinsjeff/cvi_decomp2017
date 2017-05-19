@@ -24,8 +24,7 @@ elev$litter.mass.per.ha.SE <- elev$SE * lf
 elev$carbon.per.ha <- elev$litter.mass.per.ha * 0.5
 elev$carbon.per.ha.SE <- elev$litter.mass.per.ha.SE * 0.5
 
-# # Now let's get total carbon to add up
-# elev$total.c <- 0
+# # Now let's get total carbon to add up 
 # elev$total.c.SE <- 0
 
 elev$area[elev$ELEV == "LOW"] <- low.area
