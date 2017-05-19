@@ -52,7 +52,6 @@ require(tidyr)
 # https://www.fs.fed.us/pnw/pubs/journals/pnw_2008_adair001.pdf
 # http://hydrologie.org/redbooks/a063/063006.pdf
 
-#######require(magrittr)
 require(plyr)
 require(dplyr)
 require(tidyr)
