@@ -188,7 +188,7 @@ sums2012 <- (colSums(x2012==0)/nrow(x2012)*100)
 
 #how often greater than zero
 sums2011g <- (colSums(x2011 > 0)/nrow(x2011)*100)
-sums2012g <- (colSums(x2012 >0)/nrow(x2012)*100)
+sums2012g <- (colSums(x2012 > 0)/nrow(x2012)*100)
 
 
 

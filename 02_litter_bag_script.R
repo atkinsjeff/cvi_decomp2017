@@ -92,7 +92,7 @@ p.mass.loss <- ggplot(litter, aes(y=REMAINper, x=days, color=VEG))+
 p.mass.loss
 
 # CDI from other script (01_CDI_weimer_run.R)
-cdi <- 0.6057899
+cdi <- 0.5856925
 k <- -0.4042
 f <- c(1:730)
 f <- data.frame(f)
@@ -118,11 +118,7 @@ fitted_models = litter %>% group_by(ELEV) %>% do(model = lm(log(REMAINper) ~ 0 +
 
 fitted_models$model
 
-# Apply coef to each model and return a data frame
-ldply(models, coef)
 
-# Print the summary of each model
-l_ply(models, summary, .print = TRUE)
 
 #Write litter to data folder
 write.csv(litter, "data/litter_post_processing.csv")
@@ -334,11 +330,11 @@ pVEG <- ggplot(litter, aes(x=COLLECT, y=REMAINper, color=ELEV))+
 #VEGETATION
 # trying to make box plots to describe data
 
-df <- data.frame(f1=factor(rbinom))
+# df <- data.frame(f1=factor(rbinom))
 COLLECTmeans <- aggregate(formula= REMAINper~ELEV+VEG+COLLECT, data=litter, FUN=mean)
 
 VEGmeans <- setNames(aggregate(formula= REMAINper~VEG+COLLECT, data=litter, FUN=mean), c("VEG", "COLLECT", "mean_per"))
-VEGmeansSD <-setNames(aggregate(formula= REMAINper~VEG+COLLECT, data=litter, FUN=sd), c("VEG", "COLLECT", "sd"))
+VEGmeansSD <-setNames(aggregate(formula= REMAINper~VEG+COLLECT, data=litter, FUN=SD), c("VEG", "COLLECT", "sd"))
 VEGmeansN <- setNames(aggregate(formula= REMAINper~VEG+COLLECT, data=litter, FUN=length), c("VEG", "COLLECT", "n"))
 VEGmeansN$REMAINper <- as.numeric(VEGmeansN$REMAINper)
 
@@ -524,7 +520,7 @@ multiplot(pVEG1, pVEG2, pVEG3, pVEG4, pVEG5, cols=5)
 
 
 ELEVmeans <- setNames(aggregate(formula= REMAINper~ELEV+COLLECT, data=litter, FUN=mean), c("ELEV", "COLLECT", "mean_per"))
-ELEVmeansSD <- setNames(aggregate(formula= REMAINper~ELEV+COLLECT, data=litter, FUN=sd), c("ELEV", "COLLECT", "sd"))
+ELEVmeansSD <- setNames(aggregate(formula= REMAINper~ELEV+COLLECT, data=litter, FUN=SD), c("ELEV", "COLLECT", "sd"))
 ELEVmeansN <- setNames(aggregate(formula= REMAINper~ELEV+COLLECT, data=litter, FUN=length), c("ELEV", "COLLECT", "n"))
 ELEVmeansN$REMAINper <- as.numeric(ELEVmeansN$REMAINper)
 
@@ -550,8 +546,6 @@ pELEV1 <- ggplot(collect1, aes(x=ELEV, y=REMAINper))+
         axis.text.y = element_text(size=(21)))+
   annotate("text",x=1, y=0.25, label= "1 MONTH", color = "black", size = 10)+
   geom_hline(yintercept = 0.974, size = 1, color = "red")
-
-
 
 pELEV1
 
@@ -687,26 +681,66 @@ VEGmeans$month[COLLECT == 4] <-"20 months"
 VEGmeans$month[COLLECT == 5] <-"24 months"
 detach(VEGmeans)
 
+#adjusting for number of days in year
 ELEVmeans$days <- ELEVmeans$time * 365
 VEGmeans$days <- VEGmeans$time * 365
 
-# Writing out means csv scripts. Commented out to not overwrite
-#write.csv(VEGmeans, "decomp_veg_means.csv")
-#write.csv(ELEVmeans, "decomp_elev_means.csv")
+#adjusting mean_per to percent
+ELEVmeans$mean_per <- ELEVmeans$mean_per * 100
+VEGmeans$mean_per <- VEGmeans$mean_per * 100
+
 
 ######
-VEG <- c("single","single", "single","single","single", "single")
+# Creating the collated data frame for output
+# all values are extracted from the CDI model where CDI is 0.5856 (mean of 2010-2012)
+VEG <- c("Single-Pool","Single-Pool", "Single-Pool","Single-Pool","Single-Pool", "Single-Pool")
 COLLECT <- c(0, 1, 2, 3, 4, 5)
 mean_per <- c(100, 97.9, 85.1, 78.5, 66.8, 61.65)
 sd <- c(NA, NA,NA,NA,NA, NA)
 n <- c(NA, NA,NA,NA,NA, NA)
 SE <- c(NA, NA,NA,NA,NA, NA)
-time <- c(0, 0.083, 0.667, 1, 1.667, 2)
-single.pool <- data.frame(VEG, COLLECT, mean_per, sd, n, SE, time )
+time <- c(0, 0.08333, 0.66667, 1, 1.66667, 2)
+days <- c(NA,NA,NA,NA,NA,NA)
+month <- c("Initial", "1 month", "8 months", "12 months", "20 months", 
+            "24 months") 
+single.pool <- data.frame(VEG, COLLECT, mean_per, sd, n, SE, time, month, days )
 single.pool$COLLECT <- as.factor(single.pool$COLLECT)
-VEGmeans <- merge(VEGmeans, single.pool)
+single.pool$days <- single.pool$time * 365
+VEGmeans <- rbind(VEGmeans, single.pool )
 
-mt3 <- c(100, 96.3, 76.1, 67.9, 56.0, 51.7)
+# Three pool
+VEG <- c("Three-Pool","Three-Pool", "Three-Pool","Three-Pool","Three-Pool", "Three-Pool")
+mean_per <- c(100, 96.3, 76.1, 67.9, 56.0, 51.7)
+three.pool <- data.frame(VEG, COLLECT, mean_per, sd, n, SE, time, month, days)
+three.pool$COLLECT <- as.factor(three.pool$COLLECT)
+three.pool$days <- three.pool$time * 365
+
+# now the VEGmeans is done and looks beautiful. Some columns are NA because they aren't used.
+VEGmeans <- rbind(VEGmeans, three.pool)
+
+# single pool for elevation
+ELEV <- c("Single-Pool","Single-Pool", "Single-Pool","Single-Pool","Single-Pool", "Single-Pool")
+mean_per <- c(100, 97.9, 85.1, 78.5, 66.8, 61.65)
+single.pool <- data.frame(ELEV, COLLECT, mean_per, sd, n, SE, time, month, days )
+single.pool$COLLECT <- as.factor(single.pool$COLLECT)
+single.pool$days <- single.pool$time * 365
+
+ELEVmeans <- rbind(ELEVmeans, single.pool)
+
+# Now we go for three
+ELEV <- c("Three-Pool","Three-Pool", "Three-Pool","Three-Pool","Three-Pool", "Three-Pool")
+mean_per <- c(100, 96.3, 76.1, 67.9, 56.0, 51.7)
+three.pool <- data.frame(ELEV, COLLECT, mean_per, sd, n, SE, time, month, days)
+three.pool$COLLECT <- as.factor(three.pool$COLLECT)
+three.pool$days <- three.pool$time * 365
+
+ELEVmeans <- rbind(ELEVmeans, three.pool)
+
+
+
+# Writing out means csv scripts. Commented out to not overwrite
+write.csv(VEGmeans, "decomp_veg_means.csv")
+write.csv(ELEVmeans, "decomp_elev_means.csv")
 
 x11()
 ggplot(ELEVmeans, aes(x=time, y=(mean_per), group=ELEV, colour=ELEV))+
@@ -787,68 +821,3 @@ p.CNe
 k.totals <- aggregate(k ~ ELEV + VEG + COLLECT, FUN=mean, data=litter)
 
 k.totals.final <- subset(k.totals, COLLECT ==5)
-
-
-# Now we want to put decomposition against soil pH to see what that gets us. 
-k.5 <- subset(litter, COLLECT == 5)
-pH <- read.csv(file='soil_ph.Csv', header=TRUE)
-
-k.pH <- merge(k.5, pH, by=c("PLOT"))
-
-#linear regression and correlation of soil pH. NOT SIGNIFICANT
-lm.k.pH <- lm(k ~ pH, data=k.pH)
-summary(lm.k.pH)
-cor(k.pH$pH, k.pH$k)
-
-p.k.pH <- ggplot(k.pH, aes(x=pH, y=k))+
-  geom_point(size=5, shape = 1)+
-  theme_classic()+
-  xlab("soil pH")+
-  ylab("k")+
-  theme(axis.title.x= element_text(size=20), 
-        axis.text.x = element_text(size=(18)))+
-  theme(axis.title.y= element_text(size=20), 
-        axis.text.y = element_text(size=(18)))
-p.k.pH
-
-###Now we are bringing in some leaves and CN action
-
-leaves5 <- subset(leavesx, COLLECT == 5)
-final <- merge(k.pH, leaves5, by = "PLOT")
-
-finalx <- final[, c(1,9,17,20, 23,24,26,27,32)]
-
-
-#linear regression and correlation of biomass remaining and N NOT SIGNIFICANT
-lm.mass.N <- lm(REMAINper.x ~ N, data=final)
-summary(lm.mass.N )
-cor(final$N, final$REMAINper.x)
-
-
-p.melillo2 <- ggplot(final, aes( x = N, y = (REMAINper.x * 100)))+
-  geom_point(size=5, shape = 1)+
-  theme_classic()+
-  xlab("N (%)")+
-  ylab("Biomass Remaining (%)")+
-  theme(axis.title.x= element_text(size=20), 
-        axis.text.x = element_text(size=(18)))+
-  theme(axis.title.y= element_text(size=20), 
-        axis.text.y = element_text(size=(18)))
-
-p.melillo2
-
-
-
-p.melillo3 <- ggplot(leavesxx, aes( x = ligN, y = (REMAINper * 100)))+
-  geom_point(size=5, shape = 1)+
-  theme_classic()+
-  xlab("Lignin (%) : N (%)")+
-  ylab("Biomass Remaining (%)")+
-  theme(axis.title.x= element_text(size=20), 
-        axis.text.x = element_text(size=(18)))+
-  theme(axis.title.y= element_text(size=20), 
-        axis.text.y = element_text(size=(18)))
-
-p.melillo3
-
-
