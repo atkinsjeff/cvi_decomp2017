@@ -5,6 +5,7 @@ require(plyr)
 require(magrittr)
 require(ggplot2)
 require(zoo)
+require(lubridate)
 
 # Snow data taken from NCSC
 snow.depth <- read.csv("data/CV_snowdata_winter_2010_2012.csv", header=TRUE)
@@ -12,8 +13,6 @@ snow.depth <- read.csv("data/CV_snowdata_winter_2010_2012.csv", header=TRUE)
 snow.depth[snow.depth == "-9999"] = NA
 
 snow.depth$date <- as.POSIXct(snow.depth$date, format="%m/%d/%Y")
-
-snow.depth$shortdate <- parse_date_time(snow.depth$date, "%m %d")
 
 snow.depth$snowdepth_mm <- snow.depth$snowdepth_in * 25.4
 
@@ -69,12 +68,7 @@ p.2012 <-ggplot(snow.depth, aes( x = date, y = snowdepth_mm, color = winter)) +
 p.2012
 
 ########
-
-require(plyr)
-require(magrittr)
-require(ggplot2)
-require(zoo)
-require(lubridate)
+# Air temperature
 
 air.temp <- read.csv("data/NCDC_temps.csv", header=TRUE)
 
@@ -125,7 +119,7 @@ davis.data$graphdates <- as.POSIXlt(davis.data$graphdates, format = "%m/%d/%Y")
 
 
 str(davis.data)
-davis.data < -na.omit(davis.data)
+davis.data <- na.omit(davis.data)
 
 
 
@@ -178,14 +172,12 @@ str(df)
 ggplot(df, aes(x = dates, y =Tmax))+
   geom_ribbon(aes(ymin=Tmax, ymax=Tmin), fill ="darkgrey", color="dark grey")
 
-library(lubridate)
 df$yday <- yday(df$dates)
 df$year <- year(df$dates)
 ggplot(df, aes(yday)) + geom_ribbon(aes(ymax=Tmax, ymin=Tmin, fill=factor(year)), alpha=.5)
 
+# Snow totals
 tapply(davis.data$SNOW, davis.data$WINTER, FUN=sum)
-
-aggregate(Frequency ~ Category, x, sum)
 
 x2011 <- subset(davis.data, WINTER == "2011-2012")
 x2012 <- subset(davis.data, WINTER == "2012-2013")
@@ -194,6 +186,7 @@ x2012 <- subset(davis.data, WINTER == "2012-2013")
 sums2011 <- (colSums(x2011==0)/nrow(x2011)*100)
 sums2012 <- (colSums(x2012==0)/nrow(x2012)*100)
 
+#how often greater than zero
 sums2011g <- (colSums(x2011 > 0)/nrow(x2011)*100)
 sums2012g <- (colSums(x2012 >0)/nrow(x2012)*100)
 

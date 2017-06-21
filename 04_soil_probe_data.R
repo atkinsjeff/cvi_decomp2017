@@ -1,27 +1,33 @@
 #04_soil_probe_data.R
 # Jeff Atkins (May, 2017) jwatkins6@vcu.edu or via Twitter @atkinsjeff
 
+require(ggplot2)
 
 # Import Soil Probe Data collected with WesternAG probes (2010-2011)
-probe.data <- read.csv(file = "data/soil_probe.csv", head = TRUE)
+probe.data <- read.csv(file = "./data/soil_probe.csv", head = TRUE)
 probe.data$ID <- paste(substr(probe.data$ELEV,1,1), substr(probe.data$VEG,1,1), sep = "")
-probe.data$PERIOD <- factor(probe.data.plot$PERIOD, levels= c("JUNE", "AUGUST", "SEPTEMBER"))
+probe.data$PERIOD <- factor(probe.data$PERIOD, levels= c("JUNE", "AUGUST", "SEPTEMBER"))
 
-Dataframe1$COL2 <- strsplit(Dataframe1$COL1, " ")[[1]][1]]
 
 probe.N.totals <- aggregate(Total.N ~ ID + PERIOD, FUN=mean, data=probe.data)
-probe.N.sd <- aggregate(Total.N ~ ID + PERIOD, FUN=sd, data=probe.data)
+probe.N.sd <- aggregate(Total.N ~ ID + PERIOD, FUN=SD, data=probe.data)
 
 probe.NO3.totals <- aggregate(NO3~ ID + PERIOD, FUN=mean, data=probe.data)
-probe.NO3.sd <- aggregate(NO3~ ID+ PERIOD, FUN=sd, data=probe.data)
+probe.NO3.sd <- aggregate(NO3~ ID+ PERIOD, FUN=SD, data=probe.data)
 
 
 probe.NH4.totals <- aggregate(NH4~ ID + PERIOD, FUN=mean, data=probe.data)
-probe.NH4.sd <- aggregate(NH4~ ID + PERIOD, FUN=sd, data=probe.data)
+probe.NH4.sd <- aggregate(NH4~ ID + PERIOD, FUN=SD, data=probe.data)
 
+#Looking at data visually for diagnostics
 probe.N.totals
-p.N.probe <- ggplot(probe.N.totals, aes(x = ELEV, y = Total.N))+
-  geom_bar(stat = identity)
+p.N.probe <- ggplot(probe.N.totals, aes(x = ID, y = Total.N))+
+  geom_bar(stat = "identity")
+
+#subsetting data
+probe.june <- subset(probe.data, PERIOD == "JUNE")
+probe.aug <- subset(probe.data, PERIOD == "AUGUST")
+probe.sep <- subset(probe.data, PERIOD == "SEPTEMBER")
 
 #It's unnormal
 shapiro.test(probe.data$Total.N)
@@ -63,9 +69,9 @@ ammo.label = expression(paste("NH"[4]*""^"+"))
 #First we need the means by ID
 
 #exporting to csv
-write.csv(probe.N.totals, file="data/total_N.csv")
-write.csv(probe.NO3.totals, file="data/total_nitrate.csv")
-write.csv(probe.NH4.totals, file="data/total_ammon.csv")
+# write.csv(probe.N.totals, file="data/total_N.csv")
+# write.csv(probe.NO3.totals, file="data/total_nitrate.csv")
+# write.csv(probe.NH4.totals, file="data/total_ammon.csv")
 
 
 p.N.all <- ggplot(probe.N.totals, aes(x=ID, y=Total.N, fill=PERIOD)) +
@@ -164,6 +170,7 @@ ggplot(probe.aug, aes(x = NH4, y = NO3, color = ELEV))+
 ggplot(probe.june, aes(x = NH4, y = NO3, color = ELEV))+
   geom_point(size = 4)
 
+# Looking at nitrate to ammonium differences
 p.nitrate <- ggplot(probe.data, aes(x=NO3, y=NH4, color=VEG))+
   geom_point(size=4)+
   ylab(ammo.label)+

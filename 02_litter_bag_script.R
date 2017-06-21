@@ -46,31 +46,13 @@ litter$days <- litter$time * 365        #The litter time column is in portion of
 
 mean(litter$PRE)
 var(litter$PRE)
-range(litter$PRE)     #Need to check lo1-1
+range(litter$PRE)     
 
 #Shapiro-Wilk normality
 shapiro.test(litter$REMAINper)
-# qqnorm(litter$REMAINper)
-# 
-# #output shows our data are not normally distrubted so we move to a logit transformation
-# shapiro.test(log10(litter$REMAINper))
-# # qqnorm(litter$logit)
-# 
-# #arcsine transformation
-# trans.arcsine <- function(x){
-#   asin(sign(x) * sqrt(abs(x)))
-# }
-# litter$arcsine <- trans.arcsine(litter$REMAINper)
-# 
-# shapiro.test(litter$arcsine)
-# # qqnorm(litter$arcsine)
-# 
-# #two way anova for differences in percent mass loss (litter$REMAINper)
-# fitLOST <- aov(litter$REMAINper ~ litter$ELEV + litter$VEG + litter$ELEV:litter$VEG, data=litter)
-# fitBOB <- aov(litter$REMAINper ~ litter$ELEV*litter$VEG*litter$COLLECT, data=litter)
-# 
-# summary(fitLOST)
-# summary(fitBOB)
+qqnorm(litter$REMAINper)
+ 
+
 
 ##############
 ##########################
@@ -95,18 +77,17 @@ kruskal.test(k ~ ELEV, data = no.initial)
 
 #let's look at data over time first
 
+# past method considering a binomial, seasonality of decomp
 p.mass.loss <- ggplot(litter, aes(y=REMAINper, x=days, color=ELEV))+
-  #geom_line(aes(linetype=VEG), sie=1)+
   geom_point(size=3, fill="white")+
-  stat_smooth(method="glm", family = binomial)
+  stat_smooth(method="glm", method.args = list("binomial"))
 p.mass.loss
 
 x11()
 p.mass.loss <- ggplot(litter, aes(y=REMAINper, x=days, color=VEG))+
   #geom_line(aes(linetype=VEG), sie=1)+
   geom_point(size=3, fill="white")+
-  geom_line()
-stat_smooth(method="glm", method.args = list(family = gaussian(lin = "log")))+
+  stat_smooth(method="glm", method.args = list(family = gaussian(lin = "log")))+
   stat_function(fun = function(x) 1  * exp( (-0.5278 * 0.605 * litter$days)))
 p.mass.loss
 
@@ -133,13 +114,8 @@ d <- data.frame(state=rep(c('NY', 'CA'), c(10, 10)),
                 year=rep(1:10, 2),
                 response=c(rnorm(10), rnorm(10)))
 fitted_models = litter %>% group_by(ELEV) %>% do(model = lm(log(REMAINper) ~ 0 + days, offset=rep(1, length(litter$days)), data = litter))
-# Source: local data frame [2 x 2]
-# Groups: <by row>
-#
-#    state   model
-#   (fctr)   (chr)
-# 1     CA <S3:lm>
-# 2     NY <S3:lm>
+
+
 fitted_models$model
 
 # Apply coef to each model and return a data frame
@@ -148,40 +124,43 @@ ldply(models, coef)
 # Print the summary of each model
 l_ply(models, summary, .print = TRUE)
 
+#Write litter to data folder
+write.csv(litter, "data/litter_post_processing.csv")
 
-mass.loss.model = glm(litter$REMAINper ~ litter$days, family = binomial())
-summary(mass.loss.model)
 
-k.days.model = lm(exp(litter$k.days) ~ days, data = litter)
-summary(k.days.model)
-
-p.k.rate <- ggplot(no.initial, aes(y=k.days, x=days, color=ELEV))+
-  geom_point(size=6, alpha=0.7) +
-  scale_colour_manual(values = wes_palette("Darjeeling"))+
-  theme(legend.justification=c(1,1), legend.position=c(1,1), 
-        legend.text=element_text( size=20))+
-  theme(axis.title.x= element_text(size=20), 
-        axis.text.x = element_text(size=(18)))+
-  theme(axis.title.y= element_text(size=20), 
-        axis.text.y = element_text(size=(18)))+
-  ylab("k")+
-  xlab("Days")
-#stat_smooth(method=lm, formula= y ~ log(x))
-p.k.rate
-
-p.k.rate.v <- ggplot(no.initial, aes(y=k.days, x=days, color=VEG))+
-  geom_point(size=6, alpha=0.7) +
-  scale_colour_manual(values = wes_palette("Darjeeling"))+
-  theme(legend.justification=c(1,1), legend.position=c(1,1), 
-        legend.text=element_text( size=20))+
-  theme(axis.title.x= element_text(size=20), 
-        axis.text.x = element_text(size=(18)))+
-  theme(axis.title.y= element_text(size=20), 
-        axis.text.y = element_text(size=(18)))+
-  ylab("k")+
-  xlab("Days")
-#stat_smooth(method=lm, formula= y ~ log(x))
-p.k.rate.v
+# mass.loss.model = glm(litter$REMAINper ~ litter$days, family = binomial())
+# summary(mass.loss.model)
+# 
+# k.days.model = lm(exp(litter$k.days) ~ days, data = litter)
+# summary(k.days.model)
+# 
+# p.k.rate <- ggplot(no.initial, aes(y=k.days, x=days, color=ELEV))+
+#   geom_point(size=6, alpha=0.7) +
+#   scale_colour_manual(values = wes_palette("Darjeeling"))+
+#   theme(legend.justification=c(1,1), legend.position=c(1,1), 
+#         legend.text=element_text( size=20))+
+#   theme(axis.title.x= element_text(size=20), 
+#         axis.text.x = element_text(size=(18)))+
+#   theme(axis.title.y= element_text(size=20), 
+#         axis.text.y = element_text(size=(18)))+
+#   ylab("k")+
+#   xlab("Days")
+# #stat_smooth(method=lm, formula= y ~ log(x))
+# p.k.rate
+# 
+# p.k.rate.v <- ggplot(no.initial, aes(y=k.days, x=days, color=VEG))+
+#   geom_point(size=6, alpha=0.7) +
+#   scale_colour_manual(values = wes_palette("Darjeeling"))+
+#   theme(legend.justification=c(1,1), legend.position=c(1,1), 
+#         legend.text=element_text( size=20))+
+#   theme(axis.title.x= element_text(size=20), 
+#         axis.text.x = element_text(size=(18)))+
+#   theme(axis.title.y= element_text(size=20), 
+#         axis.text.y = element_text(size=(18)))+
+#   ylab("k")+
+#   xlab("Days")
+# #stat_smooth(method=lm, formula= y ~ log(x))
+# p.k.rate.v
 
 ################
 
@@ -711,8 +690,10 @@ detach(VEGmeans)
 ELEVmeans$days <- ELEVmeans$time * 365
 VEGmeans$days <- VEGmeans$time * 365
 
-write.csv(VEGmeans, "decomp_veg_means.csv")
-write.csv(ELEVmeans, "decomp_elev_means.csv")
+# Writing out means csv scripts. Commented out to not overwrite
+#write.csv(VEGmeans, "decomp_veg_means.csv")
+#write.csv(ELEVmeans, "decomp_elev_means.csv")
+
 ######
 VEG <- c("single","single", "single","single","single", "single")
 COLLECT <- c(0, 1, 2, 3, 4, 5)
